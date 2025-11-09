@@ -13,7 +13,7 @@ require('dotenv').config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+//11
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_very_secure_random_string';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7639223015:AAGdo2oB_uL4pEqXTnnepR4IpwsTSh2_UyY';
 const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY || 'GIMZKRMOGP4F0MOTLVCE';
