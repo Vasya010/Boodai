@@ -23,7 +23,7 @@ const MYSQL_USER = process.env.MYSQL_USER || 'ch79145_Pizza';
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || 'Vasya11091109';
 const MYSQL_DATABASE = process.env.MYSQL_DATABASE || 'ch79145_Pizza';
 // Локальный SMS Gateway (на вашем сервере)
-const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'https://vasya010-backendtest-260b.twc1.net/sms/send';
+const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'https://vasya010-boodai-80b4.twc1.net/sms/send';
 const SMS_GATEWAY_API_KEY = process.env.SMS_GATEWAY_API_KEY || '';
 const SMS_GATEWAY_METHOD = process.env.SMS_GATEWAY_METHOD || 'POST'; 
 
@@ -1111,7 +1111,7 @@ app.get('/api/public/stories', (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const storiesWithUrls = stories.map(story => ({
       ...story,
-      image: `https://vasya010-backendtest-260b.twc1.net/product-image/${story.image.split('/').pop()}`
+      image: `https://vasya010-boodai-80b4.twc1.net/product-image/${story.image.split('/').pop()}`
     }));
     res.json(storiesWithUrls);
   });
@@ -1128,7 +1128,7 @@ app.get('/api/public/banners', (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const bannersWithUrls = banners.map(banner => ({
       ...banner,
-      image: `https://vasya010-backendtest-260b.twc1.net/product-image/${banner.image.split('/').pop()}`
+      image: `https://vasya010-boodai-80b4.twc1.net/product-image/${banner.image.split('/').pop()}`
     }));
     res.json(bannersWithUrls);
   });
@@ -2992,7 +2992,7 @@ app.get('/news', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const newsWithUrls = news.map(item => ({
       ...item,
-      image: item.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${item.image.split('/').pop()}` : null
+      image: item.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${item.image.split('/').pop()}` : null
     }));
     res.json(newsWithUrls);
   });
@@ -3017,7 +3017,7 @@ app.post('/news', authenticateToken, (req, res) => {
             const newsItem = rows[0];
             res.status(201).json({
               ...newsItem,
-              image: newsItem.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${newsItem.image.split('/').pop()}` : null
+              image: newsItem.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${newsItem.image.split('/').pop()}` : null
             });
           });
         }
@@ -3071,7 +3071,7 @@ app.put('/news/:id', authenticateToken, (req, res) => {
               const newsItem = rows[0];
               res.json({
                 ...newsItem,
-                image: newsItem.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${newsItem.image.split('/').pop()}` : null
+                image: newsItem.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${newsItem.image.split('/').pop()}` : null
               });
             });
           }
@@ -3113,7 +3113,7 @@ function sendPromotionNotifications(promotion, callback) {
       return callback(null, { sent: 0, total: 0 });
     }
 
-    const imageUrl = promotion.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${promotion.image.split('/').pop()}` : null;
+    const imageUrl = promotion.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${promotion.image.split('/').pop()}` : null;
     const promoText = promotion.promo_code ? ` Промокод: ${promotion.promo_code} (${promotion.discount_percent}%)` : '';
     
     users.forEach((user, index) => {
@@ -3157,7 +3157,7 @@ app.get('/promotions', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const promotionsWithUrls = promotions.map(item => ({
       ...item,
-      image: item.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${item.image.split('/').pop()}` : null
+      image: item.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${item.image.split('/').pop()}` : null
     }));
     res.json(promotionsWithUrls);
   });
@@ -3188,7 +3188,7 @@ app.post('/promotions', authenticateToken, (req, res) => {
             const promotion = rows[0];
             const promotionWithUrl = {
               ...promotion,
-              image: promotion.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${promotion.image.split('/').pop()}` : null
+              image: promotion.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${promotion.image.split('/').pop()}` : null
             };
 
             // Отправка уведомлений, если требуется
@@ -3260,7 +3260,7 @@ app.put('/promotions/:id', authenticateToken, (req, res) => {
               const promotion = rows[0];
               res.json({
                 ...promotion,
-                image: promotion.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${promotion.image.split('/').pop()}` : null
+                image: promotion.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${promotion.image.split('/').pop()}` : null
               });
             });
           }
