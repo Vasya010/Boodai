@@ -8,48 +8,20 @@ const path = require('path');
 const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
 const axios = require('axios');
-
-// Опциональная загрузка .env файла (не критично, если файла нет)
-try {
-  require('dotenv').config();
-  console.log('📄 .env файл загружен (если существует)');
-} catch (error) {
-  console.log('ℹ️  .env файл не найден, используются значения по умолчанию или переменные окружения');
-}
+require('dotenv').config();
 
 const app = express();
-
-// Настройка CORS для разрешения запросов с localhost и продакшн домена
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://vasya010-boodai-80b4.twc1.net',
-    'https://www.vasya010-boodai-80b4.twc1.net'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
+app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_very_secure_random_string';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7639223015:AAGdo2oB_uL4pEqXTnnepR4IpwsTSh2_UyY';
 const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY || 'GIMZKRMOGP4F0MOTLVCE';
 const S3_SECRET_KEY = process.env.S3_SECRET_KEY || 'WvhFfIzzCkITUrXfD8JfoDne7LmBhnNzDuDBj89I';
-// Конфигурация MySQL - работает без .env файла, используя переменные окружения или значения по умолчанию
 const MYSQL_HOST = process.env.MYSQL_HOST || 'vh438.timeweb.ru';
-const MYSQL_USER = process.env.MYSQL_USER || 'ch79145_Pizza';
+const MYSQL_USER = process.env.MYSQL_USER || 'ch79145_pizza';
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || 'Vasya11091109';
-const MYSQL_DATABASE = process.env.MYSQL_DATABASE || 'ch79145_Pizza'; // Внимание: регистр важен!
-
-// Логирование конфигурации (без пароля)
-console.log('📊 Конфигурация MySQL:');
-console.log(`   Host: ${MYSQL_HOST}`);
-console.log(`   User: ${MYSQL_USER}`);
-console.log(`   Database: ${MYSQL_DATABASE}`);
-console.log(`   Password: ${MYSQL_PASSWORD ? '***установлен***' : '❌ НЕ УСТАНОВЛЕН'}`);
+const MYSQL_DATABASE = process.env.MYSQL_DATABASE || 'ch79145_pizza';
 // Локальный SMS Gateway (на вашем сервере)
 const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'https://vasya010-boodai-80b4.twc1.net/sms/send';
 const SMS_GATEWAY_API_KEY = process.env.SMS_GATEWAY_API_KEY || '';
@@ -108,36 +80,19 @@ const db = mysql.createPool({
   password: MYSQL_PASSWORD,
   database: MYSQL_DATABASE,
   connectionLimit: 10,
-  connectTimeout: 15000,
-  acquireTimeout: 15000,
+  connectTimeout: 10000,
+  acquireTimeout: 10000,
   waitForConnections: true,
   queueLimit: 0,
-  reconnect: true,
-  // Дополнительные опции для лучшей совместимости
-  multipleStatements: false,
-  dateStrings: false,
 });
 
 // Обработка ошибок подключения к БД
 db.on('error', (err) => {
-  console.error('❌ Ошибка подключения к MySQL:', err.message);
-  console.error('   Код ошибки:', err.code);
-  
+  console.error('❌ Ошибка подключения к MySQL:', err);
   if (err.code === 'PROTOCOL_CONNECTION_LOST') {
     console.log('🔄 Переподключение к MySQL...');
-  } else if (err.code === 'ER_ACCESS_DENIED_ERROR') {
-    console.error('\n⚠️  ПРОБЛЕМА С ДОСТУПОМ К БАЗЕ ДАННЫХ:');
-    console.error('   1. Проверьте правильность логина и пароля');
-    console.error('   2. Убедитесь, что IP адрес разрешен в настройках MySQL');
-    console.error('   3. Проверьте настройки пользователя в панели управления хостингом');
-    console.error(`   Текущий IP: ${err.message.match(/@'([^']+)'/)?.[1] || 'неизвестен'}`);
-  } else if (err.code === 'ECONNREFUSED') {
-    console.error('\n⚠️  НЕ УДАЛОСЬ ПОДКЛЮЧИТЬСЯ К СЕРВЕРУ:');
-    console.error('   1. Проверьте правильность хоста:', MYSQL_HOST);
-    console.error('   2. Убедитесь, что MySQL сервер запущен');
-    console.error('   3. Проверьте доступность порта 3306');
   } else {
-    console.error('   Детали:', err);
+    throw err;
   }
 });
 
@@ -175,39 +130,14 @@ app.get('/product-image/:key', optionalAuthenticateToken, (req, res) => {
 function initializeServer(callback) {
   const maxRetries = 5;
   let retryCount = 0;
-  
   function attemptConnection() {
-    console.log(`\n🔄 Попытка подключения к MySQL (${retryCount + 1}/${maxRetries})...`);
-    
     db.getConnection((err, connection) => {
       if (err) {
         retryCount++;
-        console.error(`❌ Попытка ${retryCount} не удалась:`, err.message);
-        
-        if (err.code === 'ER_ACCESS_DENIED_ERROR') {
-          const ipMatch = err.message.match(/@'([^']+)'/);
-          const ip = ipMatch ? ipMatch[1] : 'неизвестен';
-          console.error(`\n⚠️  IP адрес ${ip} не имеет доступа к базе данных`);
-          console.error('   Решение:');
-          console.error('   1. Зайдите в панель управления хостингом (Timeweb)');
-          console.error('   2. Откройте раздел "Базы данных" → "MySQL"');
-          console.error('   3. Найдите пользователя:', MYSQL_USER);
-          console.error('   4. Добавьте IP адрес', ip, 'в список разрешенных');
-          console.error('   ИЛИ разрешите доступ с любого IP (менее безопасно)');
-        }
-        
-        if (retryCount < maxRetries) {
-          console.log(`⏳ Повторная попытка через 5 секунд...`);
-          setTimeout(attemptConnection, 5000);
-        } else {
-          console.error(`\n❌ Не удалось подключиться после ${maxRetries} попыток`);
-          console.error('   Проверьте настройки подключения в переменных окружения или .env файле');
-          callback(new Error(`MySQL connection failed after ${maxRetries} attempts: ${err.message}`));
-        }
+        if (retryCount < maxRetries) setTimeout(attemptConnection, 5000);
+        else callback(new Error(`MySQL connection failed after ${maxRetries} attempts: ${err.message}`));
         return;
       }
-      
-      console.log('✅ Подключение к MySQL установлено!');
       connection.query('SELECT 1', (err) => {
         if (err) {
           connection.release();
@@ -956,7 +886,7 @@ app.get('/api/public/sauces', (req, res) => {
       id: sauce.id,
       name: sauce.name || '',
       price: parseFloat(sauce.price) || 0,
-      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
+      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
       created_at: sauce.created_at,
       ...(sauce.usage_count !== undefined && { usage_count: sauce.usage_count })
     }));
@@ -1045,7 +975,7 @@ app.get('/api/public/products/:productId/sauces', (req, res) => {
       id: sauce.id,
       name: sauce.name || '',
       price: parseFloat(sauce.price) || 0,
-      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
+      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
       created_at: sauce.created_at
     }));
     
@@ -1107,7 +1037,7 @@ app.get('/api/public/branches/:branchId/sauces', (req, res) => {
       id: sauce.id,
       name: sauce.name || '',
       price: parseFloat(sauce.price) || 0,
-      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
+      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
       created_at: sauce.created_at,
       usage_count: sauce.usage_count || 0
     }));
@@ -1153,7 +1083,7 @@ app.get('/api/public/sauces/popular', (req, res) => {
       id: sauce.id,
       name: sauce.name || '',
       price: parseFloat(sauce.price) || 0,
-      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
+      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
       created_at: sauce.created_at,
       usage_count: sauce.usage_count || 0
     }));
@@ -2164,7 +2094,7 @@ app.get('/stories', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const storiesWithUrls = stories.map(story => ({
       ...story,
-      image: `https://nukesul-brepb-651f.twc1.net/product-image/${story.image.split('/').pop()}`
+      image: `https://vasya010-boodai-80b4.twc1.net/product-image/${story.image.split('/').pop()}`
     }));
     res.json(storiesWithUrls);
   });
@@ -2179,7 +2109,7 @@ app.get('/banners', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const bannersWithUrls = banners.map(banner => ({
       ...banner,
-      image: `https://nukesul-brepb-651f.twc1.net/product-image/${banner.image.split('/').pop()}`
+      image: `https://vasya010-boodai-80b4.twc1.net/product-image/${banner.image.split('/').pop()}`
     }));
     res.json(bannersWithUrls);
   });
@@ -2190,7 +2120,7 @@ app.get('/sauces', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const saucesWithUrls = sauces.map(sauce => ({
       ...sauce,
-      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null
+      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null
     }));
     res.json(saucesWithUrls);
   });
@@ -2751,7 +2681,7 @@ app.post('/banners', authenticateToken, (req, res) => {
                 if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
                 res.status(201).json({
                   ...newBanner[0],
-                  image: `https://nukesul-brepb-651f.twc1.net/product-image/${newBanner[0].image.split('/').pop()}`
+                  image: `https://vasya010-boodai-80b4.twc1.net/product-image/${newBanner[0].image.split('/').pop()}`
                 });
               }
             );
@@ -2808,7 +2738,7 @@ app.put('/banners/:id', authenticateToken, (req, res) => {
                   if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
                   res.json({
                     ...updatedBanner[0],
-                    image: `https://nukesul-brepb-651f.twc1.net/product-image/${updatedBanner[0].image.split('/').pop()}`
+                    image: `https://vasya010-boodai-80b4.twc1.net/product-image/${updatedBanner[0].image.split('/').pop()}`
                   });
                 }
               );
@@ -2846,7 +2776,7 @@ app.post('/stories', authenticateToken, (req, res) => {
         if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
         res.status(201).json({
           id: result.insertId,
-          image: `https://nukesul-brepb-651f.twc1.net/product-image/${imageKey.split('/').pop()}`,
+          image: `https://vasya010-boodai-80b4.twc1.net/product-image/${imageKey.split('/').pop()}`,
           created_at: new Date()
         });
       });
@@ -2895,7 +2825,7 @@ app.post('/sauces', authenticateToken, (req, res) => {
             id: result.insertId,
             name,
             price: parseFloat(price),
-            image: imageKey ? `https://nukesul-brepb-651f.twc1.net/product-image/${imageKey.split('/').pop()}` : null,
+            image: imageKey ? `https://vasya010-boodai-80b4.twc1.net/product-image/${imageKey.split('/').pop()}` : null,
             created_at: new Date()
           });
         }
@@ -2935,7 +2865,7 @@ app.put('/sauces/:id', authenticateToken, (req, res) => {
               id,
               name,
               price: parseFloat(price),
-              image: imageKey ? `https://nukesul-brepb-651f.twc1.net/product-image/${imageKey.split('/').pop()}` : null,
+              image: imageKey ? `https://vasya010-boodai-80b4.twc1.net/product-image/${imageKey.split('/').pop()}` : null,
               created_at: existing[0].created_at
             });
           }
@@ -3438,17 +3368,9 @@ app.get('/sms/send', async (req, res) => {
 
 initializeServer((err) => {
   if (err) {
-    console.error('\n❌ Ошибка инициализации сервера:', err.message);
-    console.error('\n💡 Полезная информация:');
-    console.error('   - Проверьте файл .env в папке backend/');
-    console.error('   - Или установите переменные окружения:');
-    console.error('     MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE');
-    console.error('   - Убедитесь, что IP адрес сервера разрешен в настройках MySQL');
-    console.error('\n⚠️  Сервер не запущен из-за ошибки подключения к базе данных\n');
+    console.error('❌ Ошибка инициализации сервера:', err.message);
     process.exit(1);
   }
-  
-  console.log('\n✅ Инициализация сервера завершена успешно!\n');
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`✅ Сервер запущен на порту ${PORT}`);
