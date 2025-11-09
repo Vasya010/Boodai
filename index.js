@@ -11,11 +11,7 @@ const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
-const corsOptions = {
-  origin: ['https://boodaipizza.com', 'http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
-};
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_very_secure_random_string';
@@ -27,7 +23,7 @@ const MYSQL_USER = process.env.MYSQL_USER || 'ch79145_pizza';
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || 'Vasya11091109';
 const MYSQL_DATABASE = process.env.MYSQL_DATABASE || 'ch79145_pizza';
 // Локальный SMS Gateway (на вашем сервере)
-const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'https://vasya010-boodai-80b4.twc1.net/sms/send';
+const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'https://vasya010-backendtest-260b.twc1.net/sms/send';
 const SMS_GATEWAY_API_KEY = process.env.SMS_GATEWAY_API_KEY || '';
 const SMS_GATEWAY_METHOD = process.env.SMS_GATEWAY_METHOD || 'POST'; 
 
@@ -890,7 +886,7 @@ app.get('/api/public/sauces', (req, res) => {
       id: sauce.id,
       name: sauce.name || '',
       price: parseFloat(sauce.price) || 0,
-      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
+      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
       created_at: sauce.created_at,
       ...(sauce.usage_count !== undefined && { usage_count: sauce.usage_count })
     }));
@@ -979,7 +975,7 @@ app.get('/api/public/products/:productId/sauces', (req, res) => {
       id: sauce.id,
       name: sauce.name || '',
       price: parseFloat(sauce.price) || 0,
-      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
+      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
       created_at: sauce.created_at
     }));
     
@@ -1041,7 +1037,7 @@ app.get('/api/public/branches/:branchId/sauces', (req, res) => {
       id: sauce.id,
       name: sauce.name || '',
       price: parseFloat(sauce.price) || 0,
-      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
+      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
       created_at: sauce.created_at,
       usage_count: sauce.usage_count || 0
     }));
@@ -1087,7 +1083,7 @@ app.get('/api/public/sauces/popular', (req, res) => {
       id: sauce.id,
       name: sauce.name || '',
       price: parseFloat(sauce.price) || 0,
-      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
+      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null,
       created_at: sauce.created_at,
       usage_count: sauce.usage_count || 0
     }));
@@ -1115,7 +1111,7 @@ app.get('/api/public/stories', (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const storiesWithUrls = stories.map(story => ({
       ...story,
-      image: `https://vasya010-boodai-80b4.twc1.net/product-image/${story.image.split('/').pop()}`
+      image: `https://vasya010-backendtest-260b.twc1.net/product-image/${story.image.split('/').pop()}`
     }));
     res.json(storiesWithUrls);
   });
@@ -1132,7 +1128,7 @@ app.get('/api/public/banners', (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const bannersWithUrls = banners.map(banner => ({
       ...banner,
-      image: `https://vasya010-boodai-80b4.twc1.net/product-image/${banner.image.split('/').pop()}`
+      image: `https://vasya010-backendtest-260b.twc1.net/product-image/${banner.image.split('/').pop()}`
     }));
     res.json(bannersWithUrls);
   });
@@ -2098,7 +2094,7 @@ app.get('/stories', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const storiesWithUrls = stories.map(story => ({
       ...story,
-      image: `https://vasya010-boodai-80b4.twc1.net/product-image/${story.image.split('/').pop()}`
+      image: `https://nukesul-brepb-651f.twc1.net/product-image/${story.image.split('/').pop()}`
     }));
     res.json(storiesWithUrls);
   });
@@ -2113,7 +2109,7 @@ app.get('/banners', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const bannersWithUrls = banners.map(banner => ({
       ...banner,
-      image: `https://vasya010-boodai-80b4.twc1.net/product-image/${banner.image.split('/').pop()}`
+      image: `https://nukesul-brepb-651f.twc1.net/product-image/${banner.image.split('/').pop()}`
     }));
     res.json(bannersWithUrls);
   });
@@ -2124,7 +2120,7 @@ app.get('/sauces', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const saucesWithUrls = sauces.map(sauce => ({
       ...sauce,
-      image: sauce.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${sauce.image.split('/').pop()}` : null
+      image: sauce.image ? `https://nukesul-brepb-651f.twc1.net/product-image/${sauce.image.split('/').pop()}` : null
     }));
     res.json(saucesWithUrls);
   });
@@ -2685,7 +2681,7 @@ app.post('/banners', authenticateToken, (req, res) => {
                 if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
                 res.status(201).json({
                   ...newBanner[0],
-                  image: `https://vasya010-boodai-80b4.twc1.net/product-image/${newBanner[0].image.split('/').pop()}`
+                  image: `https://nukesul-brepb-651f.twc1.net/product-image/${newBanner[0].image.split('/').pop()}`
                 });
               }
             );
@@ -2742,7 +2738,7 @@ app.put('/banners/:id', authenticateToken, (req, res) => {
                   if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
                   res.json({
                     ...updatedBanner[0],
-                    image: `https://vasya010-boodai-80b4.twc1.net/product-image/${updatedBanner[0].image.split('/').pop()}`
+                    image: `https://nukesul-brepb-651f.twc1.net/product-image/${updatedBanner[0].image.split('/').pop()}`
                   });
                 }
               );
@@ -2780,7 +2776,7 @@ app.post('/stories', authenticateToken, (req, res) => {
         if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
         res.status(201).json({
           id: result.insertId,
-          image: `https://vasya010-boodai-80b4.twc1.net/product-image/${imageKey.split('/').pop()}`,
+          image: `https://nukesul-brepb-651f.twc1.net/product-image/${imageKey.split('/').pop()}`,
           created_at: new Date()
         });
       });
@@ -2829,7 +2825,7 @@ app.post('/sauces', authenticateToken, (req, res) => {
             id: result.insertId,
             name,
             price: parseFloat(price),
-            image: imageKey ? `https://vasya010-boodai-80b4.twc1.net/product-image/${imageKey.split('/').pop()}` : null,
+            image: imageKey ? `https://nukesul-brepb-651f.twc1.net/product-image/${imageKey.split('/').pop()}` : null,
             created_at: new Date()
           });
         }
@@ -2869,7 +2865,7 @@ app.put('/sauces/:id', authenticateToken, (req, res) => {
               id,
               name,
               price: parseFloat(price),
-              image: imageKey ? `https://vasya010-boodai-80b4.twc1.net/product-image/${imageKey.split('/').pop()}` : null,
+              image: imageKey ? `https://nukesul-brepb-651f.twc1.net/product-image/${imageKey.split('/').pop()}` : null,
               created_at: existing[0].created_at
             });
           }
@@ -2996,7 +2992,7 @@ app.get('/news', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const newsWithUrls = news.map(item => ({
       ...item,
-      image: item.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${item.image.split('/').pop()}` : null
+      image: item.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${item.image.split('/').pop()}` : null
     }));
     res.json(newsWithUrls);
   });
@@ -3021,7 +3017,7 @@ app.post('/news', authenticateToken, (req, res) => {
             const newsItem = rows[0];
             res.status(201).json({
               ...newsItem,
-              image: newsItem.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${newsItem.image.split('/').pop()}` : null
+              image: newsItem.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${newsItem.image.split('/').pop()}` : null
             });
           });
         }
@@ -3075,7 +3071,7 @@ app.put('/news/:id', authenticateToken, (req, res) => {
               const newsItem = rows[0];
               res.json({
                 ...newsItem,
-                image: newsItem.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${newsItem.image.split('/').pop()}` : null
+                image: newsItem.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${newsItem.image.split('/').pop()}` : null
               });
             });
           }
@@ -3117,7 +3113,7 @@ function sendPromotionNotifications(promotion, callback) {
       return callback(null, { sent: 0, total: 0 });
     }
 
-    const imageUrl = promotion.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${promotion.image.split('/').pop()}` : null;
+    const imageUrl = promotion.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${promotion.image.split('/').pop()}` : null;
     const promoText = promotion.promo_code ? ` Промокод: ${promotion.promo_code} (${promotion.discount_percent}%)` : '';
     
     users.forEach((user, index) => {
@@ -3161,7 +3157,7 @@ app.get('/promotions', authenticateToken, (req, res) => {
     if (err) return res.status(500).json({ error: `Ошибка сервера: ${err.message}` });
     const promotionsWithUrls = promotions.map(item => ({
       ...item,
-      image: item.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${item.image.split('/').pop()}` : null
+      image: item.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${item.image.split('/').pop()}` : null
     }));
     res.json(promotionsWithUrls);
   });
@@ -3192,7 +3188,7 @@ app.post('/promotions', authenticateToken, (req, res) => {
             const promotion = rows[0];
             const promotionWithUrl = {
               ...promotion,
-              image: promotion.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${promotion.image.split('/').pop()}` : null
+              image: promotion.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${promotion.image.split('/').pop()}` : null
             };
 
             // Отправка уведомлений, если требуется
@@ -3264,7 +3260,7 @@ app.put('/promotions/:id', authenticateToken, (req, res) => {
               const promotion = rows[0];
               res.json({
                 ...promotion,
-                image: promotion.image ? `https://vasya010-boodai-80b4.twc1.net/product-image/${promotion.image.split('/').pop()}` : null
+                image: promotion.image ? `https://vasya010-backendtest-260b.twc1.net/product-image/${promotion.image.split('/').pop()}` : null
               });
             });
           }
