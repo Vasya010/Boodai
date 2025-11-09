@@ -34,7 +34,7 @@ const S3_SECRET_KEY = process.env.S3_SECRET_KEY || 'WvhFfIzzCkITUrXfD8JfoDne7LmB
 const MYSQL_HOST = process.env.MYSQL_HOST || 'vh438.timeweb.ru';
 const MYSQL_USER = process.env.MYSQL_USER || 'ch79145_Pizza';
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || 'Vasya11091109';
-const MYSQL_DATABASE = process.env.MYSQL_DATABASE || 'ch79145_Pizza';
+const MYSQL_DATABASE = process.env.MYSQL_DATABASE || 'ch79145_pizza';
 // Локальный SMS Gateway (на вашем сервере)
 const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'https://vasya010-boodai-80b4.twc1.net/sms/send';
 const SMS_GATEWAY_API_KEY = process.env.SMS_GATEWAY_API_KEY || '';
