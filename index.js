@@ -11,14 +11,11 @@ const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
-app.use(cors({
-  origin: [
-    'https://boodaipizza.com',
-    'http://localhost:3000',
-    'http://localhost:3001'
-  ],
+const corsOptions = {
+  origin: ['https://boodaipizza.com', 'http://localhost:3000', 'http://localhost:3001'],
   credentials: true
-}));
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_very_secure_random_string';
