@@ -8,7 +8,14 @@ const path = require('path');
 const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
 const axios = require('axios');
-require('dotenv').config();
+
+// Опциональная загрузка .env файла (не критично, если файла нет)
+try {
+  require('dotenv').config();
+  console.log('📄 .env файл загружен (если существует)');
+} catch (error) {
+  console.log('ℹ️  .env файл не найден, используются значения по умолчанию или переменные окружения');
+}
 
 const app = express();
 
@@ -31,10 +38,18 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_very_secure_ra
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '7639223015:AAGdo2oB_uL4pEqXTnnepR4IpwsTSh2_UyY';
 const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY || 'GIMZKRMOGP4F0MOTLVCE';
 const S3_SECRET_KEY = process.env.S3_SECRET_KEY || 'WvhFfIzzCkITUrXfD8JfoDne7LmBhnNzDuDBj89I';
+// Конфигурация MySQL - работает без .env файла, используя переменные окружения или значения по умолчанию
 const MYSQL_HOST = process.env.MYSQL_HOST || 'vh438.timeweb.ru';
 const MYSQL_USER = process.env.MYSQL_USER || 'ch79145_Pizza';
 const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD || 'Vasya11091109';
-const MYSQL_DATABASE = process.env.MYSQL_DATABASE || 'ch79145_pizza';
+const MYSQL_DATABASE = process.env.MYSQL_DATABASE || 'ch79145_Pizza'; // Внимание: регистр важен!
+
+// Логирование конфигурации (без пароля)
+console.log('📊 Конфигурация MySQL:');
+console.log(`   Host: ${MYSQL_HOST}`);
+console.log(`   User: ${MYSQL_USER}`);
+console.log(`   Database: ${MYSQL_DATABASE}`);
+console.log(`   Password: ${MYSQL_PASSWORD ? '***установлен***' : '❌ НЕ УСТАНОВЛЕН'}`);
 // Локальный SMS Gateway (на вашем сервере)
 const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'https://vasya010-boodai-80b4.twc1.net/sms/send';
 const SMS_GATEWAY_API_KEY = process.env.SMS_GATEWAY_API_KEY || '';
@@ -93,19 +108,36 @@ const db = mysql.createPool({
   password: MYSQL_PASSWORD,
   database: MYSQL_DATABASE,
   connectionLimit: 10,
-  connectTimeout: 10000,
-  acquireTimeout: 10000,
+  connectTimeout: 15000,
+  acquireTimeout: 15000,
   waitForConnections: true,
   queueLimit: 0,
+  reconnect: true,
+  // Дополнительные опции для лучшей совместимости
+  multipleStatements: false,
+  dateStrings: false,
 });
 
 // Обработка ошибок подключения к БД
 db.on('error', (err) => {
-  console.error('❌ Ошибка подключения к MySQL:', err);
+  console.error('❌ Ошибка подключения к MySQL:', err.message);
+  console.error('   Код ошибки:', err.code);
+  
   if (err.code === 'PROTOCOL_CONNECTION_LOST') {
     console.log('🔄 Переподключение к MySQL...');
+  } else if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+    console.error('\n⚠️  ПРОБЛЕМА С ДОСТУПОМ К БАЗЕ ДАННЫХ:');
+    console.error('   1. Проверьте правильность логина и пароля');
+    console.error('   2. Убедитесь, что IP адрес разрешен в настройках MySQL');
+    console.error('   3. Проверьте настройки пользователя в панели управления хостингом');
+    console.error(`   Текущий IP: ${err.message.match(/@'([^']+)'/)?.[1] || 'неизвестен'}`);
+  } else if (err.code === 'ECONNREFUSED') {
+    console.error('\n⚠️  НЕ УДАЛОСЬ ПОДКЛЮЧИТЬСЯ К СЕРВЕРУ:');
+    console.error('   1. Проверьте правильность хоста:', MYSQL_HOST);
+    console.error('   2. Убедитесь, что MySQL сервер запущен');
+    console.error('   3. Проверьте доступность порта 3306');
   } else {
-    throw err;
+    console.error('   Детали:', err);
   }
 });
 
@@ -143,14 +175,39 @@ app.get('/product-image/:key', optionalAuthenticateToken, (req, res) => {
 function initializeServer(callback) {
   const maxRetries = 5;
   let retryCount = 0;
+  
   function attemptConnection() {
+    console.log(`\n🔄 Попытка подключения к MySQL (${retryCount + 1}/${maxRetries})...`);
+    
     db.getConnection((err, connection) => {
       if (err) {
         retryCount++;
-        if (retryCount < maxRetries) setTimeout(attemptConnection, 5000);
-        else callback(new Error(`MySQL connection failed after ${maxRetries} attempts: ${err.message}`));
+        console.error(`❌ Попытка ${retryCount} не удалась:`, err.message);
+        
+        if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+          const ipMatch = err.message.match(/@'([^']+)'/);
+          const ip = ipMatch ? ipMatch[1] : 'неизвестен';
+          console.error(`\n⚠️  IP адрес ${ip} не имеет доступа к базе данных`);
+          console.error('   Решение:');
+          console.error('   1. Зайдите в панель управления хостингом (Timeweb)');
+          console.error('   2. Откройте раздел "Базы данных" → "MySQL"');
+          console.error('   3. Найдите пользователя:', MYSQL_USER);
+          console.error('   4. Добавьте IP адрес', ip, 'в список разрешенных');
+          console.error('   ИЛИ разрешите доступ с любого IP (менее безопасно)');
+        }
+        
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Повторная попытка через 5 секунд...`);
+          setTimeout(attemptConnection, 5000);
+        } else {
+          console.error(`\n❌ Не удалось подключиться после ${maxRetries} попыток`);
+          console.error('   Проверьте настройки подключения в переменных окружения или .env файле');
+          callback(new Error(`MySQL connection failed after ${maxRetries} attempts: ${err.message}`));
+        }
         return;
       }
+      
+      console.log('✅ Подключение к MySQL установлено!');
       connection.query('SELECT 1', (err) => {
         if (err) {
           connection.release();
@@ -3381,9 +3438,17 @@ app.get('/sms/send', async (req, res) => {
 
 initializeServer((err) => {
   if (err) {
-    console.error('❌ Ошибка инициализации сервера:', err.message);
+    console.error('\n❌ Ошибка инициализации сервера:', err.message);
+    console.error('\n💡 Полезная информация:');
+    console.error('   - Проверьте файл .env в папке backend/');
+    console.error('   - Или установите переменные окружения:');
+    console.error('     MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE');
+    console.error('   - Убедитесь, что IP адрес сервера разрешен в настройках MySQL');
+    console.error('\n⚠️  Сервер не запущен из-за ошибки подключения к базе данных\n');
     process.exit(1);
   }
+  
+  console.log('\n✅ Инициализация сервера завершена успешно!\n');
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`✅ Сервер запущен на порту ${PORT}`);
