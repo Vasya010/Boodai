@@ -86,7 +86,7 @@ const db = mysql.createPool({
   queueLimit: 0,
 });
 
-// Обработка ошибок подключения к БД
+// Обработка ошибок подключения к БД1
 db.on('error', (err) => {
   console.error('❌ Ошибка подключения к MySQL:', err);
   if (err.code === 'PROTOCOL_CONNECTION_LOST') {
